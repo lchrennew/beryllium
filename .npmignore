@@ -1,0 +1,6 @@
+.*
+logs
+repos/*
+test
+tmp
+*.rest

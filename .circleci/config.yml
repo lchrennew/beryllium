@@ -1,0 +1,103 @@
+version: 2.1
+orbs:
+  win: circleci/windows-tools@0.1.0
+
+commands:
+  setup:
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - v4-dependencies-{{ arch }}-{{ checksum "package-lock.json" }}
+      - run:
+          name: install npm 6.10.3
+          command: sudo npm -g install npm@6.10.3
+      - run:
+          name: Installing Dependencies
+          command: npm ci
+      - save_cache:
+          paths:
+            - node_modules
+          key: v4-dependencies-{{ arch }}-{{ checksum "package-lock.json" }}
+      - run:
+          name: prepare test git user
+          command: git config --global user.email "circleci@project-helix.io" && git config --global user.name "CircleCi Build"
+      - run: mkdir junit
+
+jobs:
+  build_win:
+    parallelism: 1
+    executor: win/default
+    steps:
+      - run: choco install nodejs-lts
+      - run: git config --global core.autocrlf false
+      - run:
+          name: prepare test git user
+          command: git config --global user.email "circleci@project-helix.io"
+      - run:
+          name: prepare test git user
+          command: git config --global user.name "CircleCi Build"
+      - checkout
+      - run: npm ci
+      - run: mkdir junit
+      - run:
+          name: Test and Code Coverage
+          command: npm run test-ci-win
+          environment:
+            MOCHA_FILE: junit/test-results.xml
+      - store_test_results:
+          path: junit
+      - store_artifacts:
+          path: junit
+
+  build:
+    parallelism: 1
+    docker:
+      - image: circleci/node:10-stretch
+    working_directory: ~/repo
+
+    steps:
+      - setup
+      - run:
+          name: Lint
+          command: npm run lint
+      - run:
+          name: Test and Code Coverage
+          command: npm run test-ci
+          environment:
+            MOCHA_FILE: junit/test-results.xml
+      - store_test_results:
+          path: junit
+      - store_artifacts:
+          path: junit
+
+  release:
+    parallelism: 1
+    docker:
+      - image: circleci/node:10-stretch
+    working_directory: ~/repo
+    steps:
+      - setup
+      - run:
+          name: revert changes to package-lock.json
+          command: git checkout -- package-lock.json
+      - run:
+          name: Semantic Release
+          command: npm run semantic-release
+
+workflows:
+  version: 2
+  build:
+    jobs:
+      # run build on any branch
+      - build
+      - build_win
+
+      # releases on master
+      - release:
+          requires:
+            - build
+            - build_win
+          filters:
+            branches:
+              only: master
