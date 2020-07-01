@@ -7,7 +7,7 @@ import shell from 'shelljs';
 import fse from 'fs-extra';
 import tmp from 'tmp';
 
-import { currentBranch, getRawContent, resolveCommit } from '../lib/git.js';
+import { currentBranch, getRawContent, resolveCommit } from '../lib/core/git.js';
 
 
 

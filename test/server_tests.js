@@ -1,6 +1,6 @@
 /* eslint-env mocha */
 
-import * as server from '../lib/server.js';
+import * as server from '../lib/core/server.js';
 import assert from 'assert';
 import path from 'path';
 import { promisify } from 'util';

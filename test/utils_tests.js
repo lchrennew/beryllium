@@ -2,7 +2,7 @@
 
 import path from 'path';
 import assert from 'assert';
-import { pathExists } from '../lib/utils';
+import { pathExists } from '../lib/core/utils';
 
 describe('Testing utils.js', () => {
   it('case-sensitive path existence', async () => {
